@@ -31,10 +31,13 @@ After approval, run the engine-scaffold bootstrap for every engine used by the a
   "hyperframesCompositionId": "approved-kebab-name",
 
   "aiClip": {
-    "model": "seedance_2_5",
+    "provider": "muapi",
+    "model": "seedance-pro-t2v",
     "prompt": "",
     "durationSeconds": 0,
     "aspectRatio": "9:16",
+    "resolution": "720p",
+    "generateAudio": false,
     "sourceMediaIds": []
   }
 }
@@ -52,7 +55,7 @@ Sync the approved spec:
 node <flick-skill>/scripts/sync-scene-spec.mjs --project <output-directory>
 ```
 
-Flick owns the approved transcript, plan, composition brief, and scene specification regardless of engine. Each engine owns its own build artifact, motion or generation mechanism, and preview surface: Remotion owns the component code, frame-driven motion, composition registration, and Studio preview; HyperFrames owns the HTML/GSAP composition, second-based timing, and its own preview server; ai-clip owns nothing hand-authored — the HIGGSFIELD-generated clip is itself the artifact, gated by cost approval before it's ever requested.
+Flick owns the approved transcript, plan, composition brief, and scene specification regardless of engine. Each engine owns its own build artifact, motion or generation mechanism, and preview surface: Remotion owns the component code, frame-driven motion, composition registration, and Studio preview; HyperFrames owns the HTML/GSAP composition, second-based timing, and its own preview server; ai-clip owns nothing hand-authored — the provider-generated clip is itself the artifact, gated by cost approval before it's ever requested.
 
 ## If Remotion
 
@@ -79,22 +82,53 @@ Build one **standalone** composition file per approved HyperFrames scene under `
 
 ## If ai-clip
 
-An ai-clip scene has no hand-authored code — it's a real HIGGSFIELD `generate_video` call. This costs the user real credits (or a free-trial "unlim" allowance), so it is gated, and the gate cannot be skipped:
+An ai-clip scene has no hand-authored code — it's a real generative-video API call, which **costs the user real money** (credits, or an API bill). That makes it gated, and the gate cannot be skipped for either provider.
 
-1. Derive a `generate_video` prompt from the scene's approved `visualDescription`, transcript context, and creative direction. Store it in `scene-spec.json`'s `aiClip.prompt` for that scene, along with `model`, `durationSeconds`, `aspectRatio`, and any `sourceMediaIds` (reference images/video the user supplied, uploaded via `media_upload_widget`/`media_import_url` first).
-2. Call `generate_video` with `get_cost: true` using those same params — this returns the cost **without submitting a job**.
-3. Show the user the exact model, duration, aspect ratio, and cost, and ask verbatim:
+Flick supports two ai-clip providers, selected per scene via `aiClip.provider`:
+
+| Provider | `aiClip.provider` | Credential | How it runs |
+| --- | --- | --- | --- |
+| **MuAPI** (default) | `"muapi"` | `MUAPI_KEY` env var | Fully scripted — `render-scene.mjs` runs it end to end (submit → poll → download), like every other engine. ~96 video models (Veo, Kling, Seedance, Runway, Wan, Pixverse, Vidu…). |
+| **HIGGSFIELD** | `"higgsfield"` | the HIGGSFIELD MCP connector | Claude drives the generation through MCP tools, then hands the finished URL to a finalizer script. |
+
+Never write either credential into the project — `MUAPI_KEY` is read from the environment only.
+
+### Common first step (both providers)
+
+Derive the prompt from the scene's approved `visualDescription`, transcript context, and creative direction. Store it in `scene-spec.json`'s `aiClip.prompt`, along with `provider`, `model`, `durationSeconds`, `aspectRatio`, and any provider-specific extras.
+
+### MuAPI
+
+1. Preview the exact request without spending anything:
+   ```text
+   node <flick-skill>/scripts/generate-ai-clip.mjs --project <output-directory> --name <approved-scene-name> --model <muapi-model> --prompt "..." --duration <seconds> --aspect-ratio <ratio> --dry-run
+   ```
+   `--dry-run` prints the endpoint and payload and submits nothing.
+2. Show the user the model, duration, aspect ratio, and that this bills their MuAPI account, and ask verbatim:
+
+   > This will generate "[scene name]" as an AI clip using [model] (~[duration]s, [aspect ratio]) on your MuAPI account. Approve, or tell me what to change first?
+
+3. Only on explicit approval, render it the normal way — the dispatcher handles the whole MuAPI flow:
+   ```text
+   node <flick-skill>/scripts/render-scene.mjs --project <output-directory> --composition <scene-id> --name <approved-scene-name>
+   ```
+
+### HIGGSFIELD
+
+1. Call `generate_video` with `get_cost: true` using the scene's params — this returns the cost **without submitting a job**.
+2. Show the user the exact model, duration, aspect ratio, and cost, and ask verbatim:
 
    > This will generate "[scene name]" as an AI clip using [model] (~[duration]s, [aspect ratio]) for [cost]. Approve, or tell me what to change first?
 
-4. Only on explicit approval, call the real `generate_video` (or, when more than one ai-clip scene was approved together, `generate_video_batch` followed by `jobs_wait` for all of them, then `show_generation_by_ids`).
-5. Once a scene's job is terminal and its downloadable URL is known, run:
+3. Only on explicit approval, call the real `generate_video` (or, for several ai-clip scenes approved together, `generate_video_batch` → `jobs_wait` → `show_generation_by_ids`).
+4. Read the finished clip's downloadable URL out of that live response, then run:
    ```text
-   node <flick-skill>/scripts/finalize-ai-clip.mjs --project <output-directory> --name <approved-scene-name> --url <downloadable-video-url> --job-id <job-id>
+   node <flick-skill>/scripts/finalize-ai-clip.mjs --project <output-directory> --name <approved-scene-name> --url <downloadable-video-url> --provider higgsfield --model <model> --job-id <job-id>
    ```
-   This downloads the clip to `<output-directory>/scenes/<approved-scene-name>/<approved-scene-name>.mp4` — the same convention every engine uses — and records the job/prompt for traceability.
 
-`render-scene.mjs` cannot render an ai-clip scene itself (it has no MCP tool access) — do not call it for an `ai-clip` scene; it will throw and point back to this flow.
+Both paths land the clip at `<output-directory>/scenes/<approved-scene-name>/<approved-scene-name>.mp4` — the same convention every engine uses — and write an `ai-clip-source.json` beside it recording provider/model/prompt, since a revision means regenerating, not editing.
+
+`render-scene.mjs` runs MuAPI ai-clips directly, but it cannot run a HIGGSFIELD one (MCP tools are not callable from a script) — for that provider it throws and points back to this flow.
 
 ## Self-review checklist
 
@@ -121,5 +155,6 @@ Before presenting any scene, verify — using the items that apply to that scene
 - [ ] `npx hyperframes preview` starts successfully before its URL is shared.
 
 **ai-clip scenes additionally:**
-- [ ] The cost was shown and the user explicitly approved it before `generate_video` was called for real.
-- [ ] `finalize-ai-clip.mjs` ran successfully and the downloaded file exists at the standard path.
+- [ ] The model/duration/cost was shown and the user explicitly approved it **before** any billable generation was submitted (MuAPI `--dry-run`, or HIGGSFIELD `get_cost: true`).
+- [ ] The clip exists at the standard `scenes/[name]/[name].mp4` path, with `ai-clip-source.json` beside it.
+- [ ] No API key was written into the project — `MUAPI_KEY` came from the environment.

@@ -17,7 +17,7 @@ Recognize `/flick` in Claude Code and `$flick` in Codex. Flick runs transcriptio
 2. Creates the timestamped transcript when the source is video.
 3. Asks for aspect ratio, brand assets, the user's creative opinion, and a default render engine (Remotion, HyperFrames, or ai-clip).
 4. Writes an approval plan with one proposed animation per transcript scene.
-5. Builds each approved scene with its engine — a Remotion component, a HyperFrames HTML composition, or a HIGGSFIELD-generated ai-clip — with action-matched sound effects where the engine supports them.
+5. Builds each approved scene with its engine — a Remotion component, a HyperFrames HTML composition, or a generated ai-clip (MuAPI or HIGGSFIELD) — with action-matched sound effects where the engine supports them.
 6. Opens the engine's preview surface for review (Remotion Studio, HyperFrames preview, or the generated clip itself for ai-clip), revises the affected scene, and saves selected code-based animations for reuse.
 
 ## Output directory
@@ -88,7 +88,9 @@ Then ask exactly, in this order:
 1. What aspect ratio should this be: 9:16, 16:9, 1:1, or custom?
 2. Put any logo, fonts, screenshots, product images, or brand guide into `<output-directory>/brand-assets/`. What should I use?
 3. What do you think? Think like a director: tell me exactly what you want from this animation—what should happen on screen, what should move, which assets matter, moments to emphasize, the style or feeling, and anything to avoid. The more specific you are, the better I can make it.
-4. Which engine should I use by default: **Remotion** (hand-built React/frame animation), **HyperFrames** (HTML/CSS/GSAP, faster to iterate), or **ai-clip** (real AI-generated video via HIGGSFIELD, best for photorealistic B-roll — costs credits per generation)? I'll suggest a different engine for a specific scene if its visual clearly calls for one, but I'll always ask before switching.
+4. Which engine should I use by default: **Remotion** (hand-built React/frame animation), **HyperFrames** (HTML/CSS/GSAP, faster to iterate), or **ai-clip** (real AI-generated footage, best for photorealistic B-roll — the only engine that costs money per scene)? I'll suggest a different engine for a specific scene if its visual clearly calls for one, but I'll always ask before switching.
+
+If they choose ai-clip, ask which provider — **MuAPI** (`MUAPI_KEY`, ~96 models, fully scripted) or **HIGGSFIELD** (MCP connector, Claude-driven) — defaulting to MuAPI. No billable generation is ever submitted before the cost gate in Step 3.
 
 Gate: `transcript.json` exists and the user has answered those four questions.
 

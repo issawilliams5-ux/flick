@@ -4,13 +4,13 @@
 
 Complete the Step 3 self-review checklist (the items matching each scene's engine) before starting any preview surface. Do not share a Studio/preview URL until every scene of that engine has rendered successfully; do not claim an ai-clip scene is done until its file exists on disk.
 
-Render every Remotion and HyperFrames scene before review:
+Render every Remotion, HyperFrames, and MuAPI ai-clip scene before review:
 
 ```text
 node <flick-skill>/scripts/render-scene.mjs --project <output-directory> --composition <scene-id> --name <approved-scene-name>
 ```
 
-This writes `<output-directory>/scenes/<approved-scene-name>/<approved-scene-name>.mp4`. For an ai-clip scene, follow [step-3-compose.md](step-3-compose.md)'s ai-clip flow (cost preflight → approval → `generate_video` → `finalize-ai-clip.mjs`) instead — `render-scene.mjs` refuses ai-clip scenes since it has no MCP tool access.
+This writes `<output-directory>/scenes/<approved-scene-name>/<approved-scene-name>.mp4`. A MuAPI ai-clip scene must already have passed its cost gate before you run this — the command bills the user's account. A HIGGSFIELD ai-clip scene cannot go through this script at all (MCP tools are not callable from a script); follow [step-3-compose.md](step-3-compose.md)'s HIGGSFIELD flow instead (`get_cost` → approval → `generate_video` → `finalize-ai-clip.mjs`).
 
 ## Preview and revise
 

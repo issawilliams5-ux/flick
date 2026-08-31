@@ -2,6 +2,7 @@
 import {mkdir, readFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 const args = process.argv.slice(2);
 const valueAfter = (flag) => {
@@ -24,7 +25,30 @@ await mkdir(outputDir, {recursive: true});
 const output = resolve(outputDir, `${name}.mp4`);
 
 if (engine === 'ai-clip') {
-  throw new Error(`Scene "${name}" uses engine "ai-clip" — render-scene.mjs cannot call MCP tools. Call generate_video yourself (per step-3-compose.md's ai-clip section), then run finalize-ai-clip.mjs with the resulting URL.`);
+  const provider = scene.aiClip?.provider || 'muapi';
+  if (provider === 'muapi') {
+    // MuAPI is a plain REST API, so this path is fully scriptable — submit,
+    // poll, and download all happen inside generate-ai-clip.mjs.
+    const {model, prompt, durationSeconds, aspectRatio, resolution, generateAudio} = scene.aiClip || {};
+    if (!model || !prompt) throw new Error(`Scene "${name}" needs aiClip.model and aiClip.prompt in scene-spec.json.`);
+    const generateArgs = [
+      resolve(fileURLToPath(new URL('.', import.meta.url)), 'generate-ai-clip.mjs'),
+      '--project', project,
+      '--name', name,
+      '--model', model,
+      '--prompt', prompt,
+    ];
+    if (durationSeconds) generateArgs.push('--duration', String(durationSeconds));
+    if (aspectRatio) generateArgs.push('--aspect-ratio', aspectRatio);
+    if (resolution) generateArgs.push('--resolution', resolution);
+    if (generateAudio === false) generateArgs.push('--no-audio');
+    const result = spawnSync(process.execPath, generateArgs, {stdio: 'inherit'});
+    if (result.error) throw result.error;
+    if (result.status !== 0) throw new Error(`MuAPI ai-clip generation failed with exit code ${result.status}`);
+    console.log(output);
+    process.exit(0);
+  }
+  throw new Error(`Scene "${name}" uses engine "ai-clip" with provider "${provider}", whose generation runs through MCP tools render-scene.mjs cannot call. Drive the generation yourself (per step-3-compose.md's ai-clip section), then run finalize-ai-clip.mjs with the resulting URL.`);
 }
 
 let result;
