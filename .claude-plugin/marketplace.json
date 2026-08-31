@@ -1,8 +1,8 @@
 {
   "name": "flick",
-  "description": "Turn a video, transcript, or script into a reviewable Remotion animation.",
-  "owner": {"name": "Creatorberry", "url": "https://www.creatorberry.com/"},
+  "description": "Turn a video, transcript, or script into reviewable scene animations — built with Remotion, HyperFrames, or real AI-generated clips.",
+  "owner": {"name": "CreatorBerry (fork maintained by issawilliams5-ux)", "url": "https://github.com/issawilliams5-ux/flick"},
   "plugins": [
-    {"name": "flick", "source": "./", "description": "Create original motion animation with Remotion."}
+    {"name": "flick", "source": "./", "description": "Create original motion animation with Remotion, HyperFrames, or AI-generated clips."}
   ]
 }

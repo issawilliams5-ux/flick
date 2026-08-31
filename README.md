@@ -1,18 +1,18 @@
 # Flick
 
-![Flick — Your script, in motion](https://raw.githubusercontent.com/Creatorberry/flick/6f607b47f6f2e2a0504417607d58c946da58dadc/assets/flick-hero.gif)
+![Flick — Your script, in motion](assets/flick-hero.gif)
 
 Turn a video, link, or transcript into original short-form scene animations with an AI motion director.
 
-An open-source project from [Creatorberry](https://www.creatorberry.com/?utm_source=github&utm_medium=opensource&utm_campaign=flick).
+> **This is a fork** of [Creatorberry/flick](https://github.com/Creatorberry/flick) (MIT), which builds every scene with Remotion. This fork adds **pluggable render engines**: each scene can be built with **Remotion** (React/frame animation), **HyperFrames** (HTML/CSS/GSAP), or **ai-clip** — real AI-generated footage via **MuAPI** (~96 models: Veo, Kling, Seedance, Runway, Wan…) or **HIGGSFIELD**. Upstream credit and license are preserved; see [LICENSE](LICENSE).
 
 ## What Flick does
 
 ```text
 video or link → timestamped transcript
-transcript → aspect ratio + brand assets + your opinion
-approved scene plan → named Remotion scene animations
-Studio preview → feedback → reusable scene animations
+transcript → aspect ratio + brand assets + your opinion + default engine
+approved scene plan → named scene animations (Remotion / HyperFrames / ai-clip)
+preview → feedback → reusable scene animations
 ```
 
 Flick creates a timestamped transcript from a video or public link. If you paste a transcript, that becomes the script Flick animates. It then asks only for your aspect ratio, selected brand assets, and creative opinion before it plans the scenes.
@@ -24,7 +24,7 @@ There is no background music. Flick uses bundled sound effects only when they ma
 ### Claude Code
 
 ```text
-/plugin marketplace add Creatorberry/flick
+/plugin marketplace add issawilliams5-ux/flick
 /plugin install flick@flick
 ```
 
@@ -44,7 +44,7 @@ To update manually instead:
 ### Codex
 
 ```text
-npx skills add Creatorberry/flick --skill flick --agent codex --global --yes
+npx skills add issawilliams5-ux/flick --skill flick --agent codex --global --yes
 ```
 
 Then ask: `Use $flick to animate this.`
@@ -60,7 +60,7 @@ npx skills update
 For Grok Build, Gemini CLI, OpenCode, Cursor, Cline, and other compatible agents:
 
 ```text
-npx skills add Creatorberry/flick --skill flick --global
+npx skills add issawilliams5-ux/flick --skill flick --global
 ```
 
 Follow the prompts to install Flick in your agent. To update it later:
@@ -73,13 +73,15 @@ npx skills update -g
 
 The first Flick run creates a local `flick-output/` workspace and installs:
 
-- Remotion
 - a bundled FFmpeg binary
 - Whisper
 - yt-dlp
 - Flick's bundled sound effects
+- then, once you've chosen an engine, only that engine's dependencies — Remotion (npm) for Remotion scenes, or nothing extra for HyperFrames (fetched on demand via `npx hyperframes`) and ai-clip
 
 It needs Node.js 20+, Python 3, and network access. If Node or Python is missing, Flick tells you how to install it and asks before it runs a system installer.
+
+**ai-clip credentials.** ai-clip scenes call a paid generation API and are the only engine that costs money per scene. MuAPI (the default provider) reads `MUAPI_KEY` from your environment; HIGGSFIELD runs through its MCP connector. Flick never writes either credential into your project, and never submits a billable generation without showing you the cost and asking first.
 
 ## The output
 
@@ -89,25 +91,27 @@ Each Flick run uses one local folder:
 flick-output/
   transcript.json
   flick-plan.md
-  remotion-brief.md
+  composition-brief.md
   scene-spec.json
   brand-assets/
-  remotion/
+  remotion/            (only if a scene uses the Remotion engine)
+  hyperframes/          (only if a scene uses the HyperFrames engine)
   scenes/
     [approved-scene-name]/
       [approved-scene-name].mp4
       poster.jpg
+      ai-clip-source.json   (ai-clip scenes only — provider, model, prompt)
 ```
 
-`flick-plan.md` is the compact scene plan you approve. `remotion-brief.md` and `scene-spec.json` are the build instructions. Each approved transcript scene becomes a separately named Remotion animation.
+`flick-plan.md` is the compact scene plan you approve. `composition-brief.md` and `scene-spec.json` are the build instructions — `scene-spec.json` carries each scene's `engine`, so one run can mix engines. Every engine writes its finished scene to the same `scenes/[name]/[name].mp4` path.
 
 ## Reusable animation library
 
-Flick installs editable Remotion templates in [`skills/flick/saved-animations/`](skills/flick/saved-animations/). Before building, Flick reads that folder's catalog and reuses a template only when its visual pattern clearly fits the requested scene.
+Flick installs editable templates in [`skills/flick/saved-animations/`](skills/flick/saved-animations/) — Remotion components (`.tsx`) and HyperFrames compositions (`.html`). Before building, Flick reads that folder's catalog and reuses a template only when its visual pattern clearly fits the requested scene. ai-clip scenes are never saved there: they're one-off generations tied to a prompt, not templates.
 
 ## Review and reuse
 
-Flick renders each scene, opens the individual scene compositions in Remotion Studio, and asks what should change. It revises only the scene you mention. Once you approve, Flick asks which scene animations you want saved as reusable assets.
+Flick renders each scene and opens its engine's preview surface — Remotion Studio for Remotion scenes, `npx hyperframes preview` for HyperFrames scenes — and asks what should change. An ai-clip scene has no live preview; the generated MP4 is the preview, and revising it means regenerating with an adjusted prompt (re-running the cost gate), not editing code. Flick revises only the scene you mention. Once you approve, Flick asks which scene animations you want saved as reusable assets.
 
 ## Start with the right source
 
