@@ -1,0 +1,80 @@
+# Composition Brief Template
+
+Write `<output-directory>/composition-brief.md` after the user approves `flick-plan.md` and before writing scene components or requesting any ai-clip generation. This is Flick's handoff to each scene's engine. It must preserve the approved plan; do not add new creative direction.
+
+```md
+# Composition Brief: Flick
+
+## Objective
+Create the approved short-form scene animations from the timestamped transcript.
+
+## Output
+- Format: [approved aspect ratio] — [width]x[height] at [fps] fps
+- Engines used: [remotion / hyperframes / ai-clip — whichever are in play]
+- Rendered scenes:
+  - `[approved-scene-name]` → `scenes/[approved-scene-name]/[approved-scene-name].mp4`
+
+## Source Material
+- Transcript: `transcript.json`
+- Approved plan: `flick-plan.md`
+- Selected brand assets: [specific files, or none]
+- Available sound effects: `remotion/public/sounds/` and/or `hyperframes/sounds/`, whichever engines are in use
+
+## Creative Direction
+- User direction: [their answer to "What do you think?"]
+- Interpretation: [how that direction affects visual language and restraint]
+- Avoid: generic filler visuals, unapproved assets, background music
+
+## Scene Compositions
+
+### [Approved scene name]
+- Engine: [remotion | hyperframes | ai-clip]
+- Composition ID: `[approved-kebab-name]`
+<!-- Remotion only -->
+- Component: `[ApprovedSceneName]`
+<!-- HyperFrames only -->
+- Composition file: `hyperframes/compositions/[approved-kebab-name].html`
+<!-- ai-clip only -->
+- Model: `[higgsfield-model-id]`
+- Prompt: `[generation prompt derived from visualDescription]`
+- Duration: `[seconds]` · Aspect ratio: `[e.g. 9:16]`
+- Transcript: [exact line(s)]
+- Time: [start timestamp]–[end timestamp]
+- Output: `scenes/[approved-scene-name]/[approved-scene-name].mp4`
+- What is on screen: [approved visual composition]
+- Text on screen: [exact text, or none]
+- Brand assets / supplied material: [specific files, or none]
+- Sequential / interaction: [what appears or changes, in exact order; or none — n/a for ai-clip]
+- Sound effect: [file/type and visible trigger; or none — n/a for ai-clip]
+- Audio-coupled idea: [visual timing that must align to the sound; or none — n/a for ai-clip]
+- Transition: [entry/exit treatment]
+
+## Build Instructions
+
+### If Remotion
+- Build one dedicated React component for each approved Remotion scene under `remotion/src/scenes/`.
+- Register each scene as its own `<Composition>` in `remotion/src/Root.tsx`.
+- Do not create a combined or all-scenes composition.
+- Derive frame timing from the approved transcript timestamps and `scene-spec.json`.
+- Use frame-driven Remotion motion. Build the approved visual idea; do not fall back to generic title-card layouts.
+- Use only selected brand assets from `remotion/public/brand-assets/` and bundled SFX from `remotion/public/sounds/`.
+- Do not add background music. Use an SFX only when it supports the visible action in the approved scene.
+- Keep on-screen text readable and render each scene before review.
+
+### If HyperFrames
+- Build one **standalone** composition file per approved scene under `hyperframes/compositions/[approved-kebab-name].html` — a full `<!doctype html>` document, not a `<template>`-wrapped fragment (that mechanism is for combining scenes into one continuous timeline, not for Flick's independent-per-scene renders). Copy the shape from `<flick-skill>/assets/starter-hyperframes/compositions/EXAMPLE-scene.html.txt`.
+- Load GSAP from the vendored local copy (`<script src="../vendor/gsap.min.js">`), never a CDN URL.
+- Set `data-composition-id` to the scene's kebab-case id and register its timeline at that same key in `window.__timelines[...]`.
+- Author timing in seconds against `data-start`/`data-duration`, not frames. Clips must be direct children of the composition root.
+- Use `class="clip"` on visible div/img elements; use a paused `gsap.timeline({paused: true})`; prefer `gsap.fromTo()` over `gsap.from()`.
+- Use only selected brand assets from `hyperframes/brand-assets/` and bundled SFX from `hyperframes/sounds/` (plain `<audio>` clips, track index 10+, `data-volume` ~0.35).
+- Do not add background music. Keep on-screen text readable and render each scene before review.
+
+### If ai-clip
+- Do not hand-author animation. Derive a `generate_video` prompt from the scene's approved visual description, transcript context, and creative direction.
+- Preflight cost with `get_cost: true` and get explicit user approval — showing model, duration, aspect ratio, and cost — before generating for real.
+- After generation completes, run `finalize-ai-clip.mjs` to place the file at the standard `scenes/[approved-scene-name]/[approved-scene-name].mp4` path.
+- There is no reusable component to save for an ai-clip scene, and no live preview session — the generated clip is the preview.
+```
+
+`scene-spec.json` is the structured companion to this brief. It must match the composition IDs, engines, component names or composition files or generation params, timestamp/frame ranges, selected asset paths, and sound-effect timing stated above.

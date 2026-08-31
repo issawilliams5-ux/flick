@@ -1,0 +1,9 @@
+{
+  "name": "flick-skill",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Shared dependencies for the Flick skill's own scripts (engine-independent — used by create-poster.mjs regardless of which render engine a project uses).",
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
+  }
+}

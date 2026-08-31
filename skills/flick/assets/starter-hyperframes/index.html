@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Flick — HyperFrames project</title>
+    <!--
+      Each Flick scene is rendered as its own INDEPENDENT, standalone
+      composition file under compositions/<scene-id>.html — a full
+      <!doctype html> document (like this one), not a fragment. This file
+      is never edited or rendered by Flick; it exists only because
+      `hyperframes render` expects some index.html to be present when no
+      -c/--composition flag is passed. Flick always passes -c explicitly
+      (via render-scene.mjs), pointed at one scene file at a time.
+    -->
+    <style>body { margin: 0; background: #000; }</style>
+  </head>
+  <body></body>
+</html>

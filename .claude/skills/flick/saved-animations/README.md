@@ -2,6 +2,8 @@
 
 Read this catalog before building a scene. Reuse an asset only when its visual pattern is a strong match for the requested scene. If no entry clearly fits, create a new scene. Templates may reference original images or frame sequences that are not bundled; replace them with allowed current assets when adapting a template.
 
+Entries may be Remotion components (`.tsx`, imported and rendered as a React component) or HyperFrames compositions (`.html`, authored with `data-*` attributes and a GSAP timeline) — check an entry's `Kind`/file extension before assuming which pattern applies. Entries below without a `Kind` line predate this distinction and are all Remotion components. ai-clip scenes are never saved here — they're one-off generations, not reusable templates.
+
 ## ocr-model-card-over-page
 **File:** `ocr-model-card-over-page/UnlimitedOcrScene1Hook.tsx`
 **Pattern:** A vertically scrolling full-page website sits behind a large tilted image card. A short title appears above the card, then the card slides away.

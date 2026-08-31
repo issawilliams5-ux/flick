@@ -1,6 +1,6 @@
 # Step 2: Write the Flick plan
 
-Write `<output-directory>/flick-plan.md` before writing Remotion code. This is the user-facing creative contract. Keep it compact. State what the animation must show, not React, frame, or implementation details.
+Write `<output-directory>/flick-plan.md` before writing any scene's code, composition, or generation call. This is the user-facing creative contract. Keep it compact. State what the animation must show, not React, HTML, frame, or other implementation details.
 
 ## Structure of `flick-plan.md`
 
@@ -92,7 +92,7 @@ Before writing each scene, look for a visible event that can make it feel alive:
 - typing, clicking, selecting, swiping, or toggling;
 - a count-up, a reveal, an impact, or a transformation.
 
-If a scene has one, state exactly what appears, in what order, and what interaction is simulated. Do not leave rhythm or interaction for Remotion to guess.
+If a scene has one, state exactly what appears, in what order, and what interaction is simulated. Do not leave rhythm or interaction for the build step to guess.
 
 ## Sound-effect planning
 
@@ -109,6 +109,8 @@ Choose a transition that preserves the approved creative direction and connects 
 ## Handoff posture
 
 The plan is the creative contract for approval. It must be specific about what appears, what moves, what uses supplied assets, and what sound supports a visible action. Do not prescribe component structure, CSS, React hooks, frame values, or exact implementation mechanics.
+
+When a scene's engine will differ from the session's default (from Step 1's fourth question) — most often because a scene clearly calls for photorealistic footage — say so in prose under that scene, e.g. `Engine: ai-clip (photorealistic B-roll)`. This is optional; Step 3 is what formalizes engine choice into `scene-spec.json`.
 
 Show the whole plan and ask:
 
