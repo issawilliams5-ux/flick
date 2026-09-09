@@ -21,3 +21,33 @@ Run the ladder *after* understanding the problem, not instead of it — read the
 ## Never on the chopping block
 
 Trust-boundary validation, data-loss handling, security, and accessibility are never cut for brevity, no matter what rung you land on.
+
+# Screenshot/prompt → UI code: screenshot-to-code and OpenUI (installed on demand)
+
+[screenshot-to-code](https://github.com/abi/screenshot-to-code) (MIT) and
+[OpenUI](https://github.com/wandb/openui) (Apache-2.0) turn a screenshot or a
+text prompt into HTML/Tailwind. They are **not vendored** here and are not part
+of any Flick run; `skills/ui-from-screenshot/scripts/setup-ui-tools.mjs` clones
+and installs them into `~/ui-tools/` (override with `UI_TOOLS_HOME`) on demand.
+
+Use them for the one thing they are good at here: producing the *static* markup
+for a scene that must show a believable interface, which you then lay out and
+animate yourself with GSAP (HyperFrames) or JSX (Remotion). Reach for a
+`saved-animations/` template first — reuse beats regenerate. Skip both tools
+entirely for typographic, illustrative, or B-roll scenes; there is no UI to
+reconstruct.
+
+- screenshot-to-code: backend on **7001**, Vite frontend on **5173**.
+  OpenUI: one process on **7878**.
+- Both need a vision-capable LLM key (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`,
+  and friends — see `.env.example`). They boot and serve without one;
+  generation fails until a key is set. Never commit a key.
+- Every generation is a paid API call. Test one screenshot and check the bill
+  before doing a batch.
+- Screenshots leave the machine for the model provider — never upload customer
+  data, credentials, or anything under NDA, and only reproduce a UI the user
+  has the right to reproduce.
+- Generated markup is untrusted output: read it, strip invented brand names,
+  lorem text, `<script>` blocks, and remote `src`/tracking URLs before it
+  reaches a scene.
+- Full run instructions and guardrails: `skills/ui-from-screenshot/SKILL.md`.
