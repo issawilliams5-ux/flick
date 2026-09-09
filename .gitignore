@@ -20,3 +20,4 @@ flick-*/
 **/transcript.json
 **/scene-spec.json
 !skills/flick/assets/starter-remotion/src/data/scene-spec.json
+.env

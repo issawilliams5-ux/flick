@@ -109,6 +109,19 @@ flick-output/
 
 Flick installs editable templates in [`skills/flick/saved-animations/`](skills/flick/saved-animations/) — Remotion components (`.tsx`) and HyperFrames compositions (`.html`). Before building, Flick reads that folder's catalog and reuses a template only when its visual pattern clearly fits the requested scene. ai-clip scenes are never saved there: they're one-off generations tied to a prompt, not templates.
 
+## Screenshot or prompt to UI code (optional)
+
+Two open-source tools are wired in on demand for scenes that have to show a real interface — an app screen, dashboard, terminal, or landing page. They turn a screenshot or a written description into HTML/Tailwind you adapt into a HyperFrames composition or a Remotion component. Neither is vendored here; both are cloned and installed outside the repo:
+
+```text
+node skills/ui-from-screenshot/scripts/setup-ui-tools.mjs --tool all
+```
+
+- **[screenshot-to-code](https://github.com/abi/screenshot-to-code)** (MIT) — screenshot in, markup out. Backend on port **7001**, Vite frontend on **5173**.
+- **[OpenUI](https://github.com/wandb/openui)** (Apache-2.0) — describe an interface in words and iterate on it live. One process on port **7878**.
+
+Both need a vision-capable LLM API key before they can generate anything; see [`.env.example`](.env.example) and [`skills/ui-from-screenshot/SKILL.md`](skills/ui-from-screenshot/SKILL.md) for the run commands, keys, and guardrails. They emit static pages — a starting layout to trim and animate, not a finished scene.
+
 ## Review and reuse
 
 Flick renders each scene and opens its engine's preview surface — Remotion Studio for Remotion scenes, `npx hyperframes preview` for HyperFrames scenes — and asks what should change. An ai-clip scene has no live preview; the generated MP4 is the preview, and revising it means regenerating with an adjusted prompt (re-running the cost gate), not editing code. Flick revises only the scene you mention. Once you approve, Flick asks which scene animations you want saved as reusable assets.
