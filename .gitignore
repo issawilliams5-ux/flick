@@ -21,3 +21,6 @@ flick-*/
 **/scene-spec.json
 !skills/flick/assets/starter-remotion/src/data/scene-spec.json
 .env
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
