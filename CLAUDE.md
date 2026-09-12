@@ -22,6 +22,23 @@ Run the ladder *after* understanding the problem, not instead of it — read the
 
 Trust-boundary validation, data-loss handling, security, and accessibility are never cut for brevity, no matter what rung you land on.
 
+# Terse output mode: caveman skill (opt-in)
+
+[caveman](https://github.com/JuliusBrussee/caveman) (MIT) is a skill that
+answers in compressed, technical-but-terse prose to cut output tokens —
+complementary to the Ponytail ruleset above, which targets code volume rather
+than wording. Vendored here as the "small rock" only: `.claude/skills/caveman/`
+(a plain Markdown rule file, no hooks, no proxy, nothing executed).
+
+- Opt-in per session — say `/caveman` or "talk like caveman" to activate,
+  `/caveman off` or "normal mode" to revert. It does not change default
+  behavior on its own.
+- Never applies to persisted text: code, comments, commit messages, PR/issue
+  bodies, or docs stay normal prose regardless of mode.
+- The project's bigger "proxy" component (`@caveman-ai/cli`, BSL-1.1) is
+  **not installed** — it needs `npm install -g` of an unreviewed package and
+  is out of scope for this repo; the skill alone covers terse replies.
+
 # Screenshot/prompt → UI code: screenshot-to-code and OpenUI (installed on demand)
 
 [screenshot-to-code](https://github.com/abi/screenshot-to-code) (MIT) and
