@@ -44,24 +44,27 @@ What is here:
   no npm dependencies, no network calls to third-party hosts.
 - `.ecc/memory/` — the Memory Vault (see below).
 
-## Hooks are wired and they gate Bash
+## Hooks are wired; GateGuard is off
 
-`.claude/settings.json` registers ECC's 24 hooks across PreToolUse, PostToolUse,
+`.claude/settings.json` registers ECC hooks across PreToolUse, PostToolUse,
 PostToolUseFailure, SessionStart, Stop, PreCompact and SessionEnd, alongside the
 existing graft hooks. Each command sets
 `CLAUDE_PLUGIN_ROOT="${CLAUDE_PROJECT_DIR:-.}/ecc"` so the runtime resolves to
 the vendored copy and never to a machine-global install.
 
-**GateGuard denies the first Bash command of every session** and asks the agent
-to state what the command verifies before retrying. Destructive commands (`rm`,
-force `git checkout`, `find -exec`) require a rollback procedure. This is
-deliberate, not a fault. Escape hatches, in narrowing order:
+**GateGuard is disabled** via `env.ECC_GATEGUARD=off`. That switch is what
+actually disables it: the gate is reached through
+`pre-bash-dispatcher.js`, so removing its `settings.json` entry is not enough
+on its own. With it off, neither the first-Bash fact-forcing gate nor the
+destructive-command checks (`rm`, force `git checkout`, `find -exec`) run.
 
-- `GATEGUARD_BASH_ROUTINE_DISABLED=1` — drops the routine gate, keeps the
-  destructive-command checks.
-- `ECC_DISABLED_HOOKS=pre:bash:gateguard-fact-force` — disables that one hook.
-- `ECC_GATEGUARD=off` — disables GateGuard entirely. Use for setup or repair
-  work, not as a default.
+To get the destructive checks back while keeping the routine gate off, replace
+that variable with `GATEGUARD_BASH_ROUTINE_DISABLED=1`.
+
+`ecc/scripts/` carries only the hook runtime closure — every `hooks/` script
+(several are dispatched dynamically by name, so none can be pruned) plus the 18
+`lib/` modules they actually reach. ECC's install-time, control-pane and
+eval-harness code is not vendored.
 
 ## Memory Vault
 
