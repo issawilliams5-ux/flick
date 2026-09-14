@@ -300,6 +300,6 @@
     ]
   },
   "env": {
-    "ECC_GATEGUARD": "off"
+    "GATEGUARD_BASH_ROUTINE_DISABLED": "1"
   }
 }
