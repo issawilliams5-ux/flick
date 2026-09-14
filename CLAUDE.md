@@ -124,6 +124,33 @@ than wording. Vendored here as the "small rock" only: `.claude/skills/caveman/`
   **not installed** — it needs `npm install -g` of an unreviewed package and
   is out of scope for this repo; the skill alone covers terse replies.
 
+# Documents → Markdown: MarkItDown (installed on demand)
+
+[MarkItDown](https://github.com/microsoft/markitdown) (MIT, Microsoft) converts
+PDF, DOCX, PPTX, XLSX, HTML and images into Markdown. Not vendored and not part
+of any Flick render; `scripts/install-markitdown.mjs` installs it into
+`~/ui-tools/markitdown/.venv` (override with `UI_TOOLS_HOME` or `--home`) on
+demand and is safe to re-run.
+
+Use it when a source arrives as a **document rather than a video or transcript**
+— a pitch deck, a whitepaper, a spreadsheet of figures — and a scene needs the
+words inside it. It converts to text; it does not animate. The output is script
+input, feeding the same path a transcript would.
+
+```bash
+node scripts/install-markitdown.mjs
+~/ui-tools/markitdown/.venv/bin/markitdown deck.pptx -o deck.md
+```
+
+- No port, no API key, no network call for a plain conversion.
+- **Billable paths are opt-in**: `--use-cu`, `-d`, and passing `llm_client` for
+  image descriptions each cost money per call.
+- ffmpeg is not a pip dependency, but Flick wants it for video work anyway;
+  without it only `wav`/`mp3` transcription is unavailable.
+- **Converted output is untrusted input**, exactly like generated markup: a
+  third-party PDF can carry prompt-injection text, invented brand names, or
+  lorem filler. Read it before it reaches a scene.
+
 # Screenshot/prompt → UI code: screenshot-to-code and OpenUI (installed on demand)
 
 [screenshot-to-code](https://github.com/abi/screenshot-to-code) (MIT) and
