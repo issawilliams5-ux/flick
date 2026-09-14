@@ -22,6 +22,71 @@ Run the ladder *after* understanding the problem, not instead of it — read the
 
 Trust-boundary validation, data-loss handling, security, and accessibility are never cut for brevity, no matter what rung you land on.
 
+# Engineering system: ECC (core profile, vendored)
+
+[ECC](https://github.com/affaan-m/ECC) (MIT) is an agent engineering system:
+plan -> test -> implement -> review -> verify -> remember. Vendored here as a
+**core profile**, not the full catalogue — ECC ships 292 skills and 68 agents,
+and its own docs warn that installing everything advertises the whole catalogue
+to the model on every turn. The Ponytail ladder says the same, so this repo
+carries the spine only.
+
+What is here:
+
+- `.claude/skills/` — `tdd-workflow`, `verification-loop`, `security-review`,
+  `context-budget`, `plan-orchestrate`, `unified-memory`.
+- `.claude/agents/` — `planner`, `code-reviewer`, `build-error-resolver`,
+  `architect`. Fresh-context workers; the reviewer is the point, since the
+  context that wrote the code should not be the one that reviews it.
+- `.claude/rules/ecc/` — `common` plus this repo's language packs. Rules load
+  every turn, so add packs deliberately.
+- `ecc/scripts/` — the hook runtime (`hooks/` + `lib/`). Node built-ins only,
+  no npm dependencies, no network calls to third-party hosts.
+- `.ecc/memory/` — the Memory Vault (see below).
+
+## Hooks are wired and they gate Bash
+
+`.claude/settings.json` registers ECC's 24 hooks across PreToolUse, PostToolUse,
+PostToolUseFailure, SessionStart, Stop, PreCompact and SessionEnd, alongside the
+existing graft hooks. Each command sets
+`CLAUDE_PLUGIN_ROOT="${CLAUDE_PROJECT_DIR:-.}/ecc"` so the runtime resolves to
+the vendored copy and never to a machine-global install.
+
+**GateGuard denies the first Bash command of every session** and asks the agent
+to state what the command verifies before retrying. Destructive commands (`rm`,
+force `git checkout`, `find -exec`) require a rollback procedure. This is
+deliberate, not a fault. Escape hatches, in narrowing order:
+
+- `GATEGUARD_BASH_ROUTINE_DISABLED=1` — drops the routine gate, keeps the
+  destructive-command checks.
+- `ECC_DISABLED_HOOKS=pre:bash:gateguard-fact-force` — disables that one hook.
+- `ECC_GATEGUARD=off` — disables GateGuard entirely. Use for setup or repair
+  work, not as a default.
+
+## Memory Vault
+
+- `.ecc/memory/project/` — fail-closed `.gitignore` (`*` with `!.gitignore`).
+  Local only, never committed, and therefore **does not survive an ephemeral
+  container**.
+- `.ecc/memory/team/` — committed and shared across harnesses.
+
+The `ecc memory` CLI and the optional MCP server are **not installed**; they
+need a global npm install. The `unified-memory` skill reads and writes the vault
+format directly, which is what makes it portable between Claude, Codex, and
+Cursor.
+
+Memory is unreviewed context, not executable policy. Verify important claims
+against authoritative sources before acting on them.
+
+## What is deliberately absent
+
+No `npx ecc-universal` run, no `/plugin install ecc@ecc`, no global
+`npm install -g ecc-universal`, and so no `ecc` CLI, no AgentShield binary, and
+no Itô compute bridge. Those install paths execute unreviewed third-party
+package code. If you want them, run them yourself on a trusted machine — and do
+not stack a plugin install on top of this vendored copy, or hooks and skills
+register twice.
+
 # Terse output mode: caveman skill (opt-in)
 
 [caveman](https://github.com/JuliusBrussee/caveman) (MIT) is a skill that
