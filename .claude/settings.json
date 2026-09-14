@@ -318,5 +318,8 @@
       "Bash(graft-dev:*)",
       "Bash(node dist/cli.js:*)"
     ]
+  },
+  "env": {
+    "ECC_GATEGUARD": "off"
   }
 }
