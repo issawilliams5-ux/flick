@@ -62,14 +62,17 @@ Verified denied: `rm -rf`, `git checkout -f`, `git reset --hard`,
 `find -exec rm`, and unquoted `drop table` / `truncate`.
 Verified allowed: `ls`, `npm test`, `git status`.
 
-Two gaps in the upstream detector worth knowing, neither introduced here:
+One upstream gap remains, and one is patched locally:
 
 - **Quoted SQL is not caught.** `psql -c "drop table users"` passes, because
   GateGuard strips quoted strings before running the SQL pattern so that a commit
   message mentioning "drop table" does not trip it. Unquoted forms are caught.
-- **`dd if=/dev/...` is not caught.** The pattern ends in `dd\s+if=\b`, and
-  `\b` after `=` requires a word character next, so a `/` path never matches.
-  `dd if=backup.img` does match.
+- **`dd if=/dev/...` is patched here.** Upstream the pattern ended in
+  `dd\s+if=\b`, and `\b` after `=` requires a word character next, so a `/`
+  path never matched. `gateguard-fact-force.js` now matches `dd if=` outside
+  the word-boundary group. This is a local edit to vendored code, marked in a
+  comment there, and not yet reported upstream — re-apply it if `ecc/` is
+  refreshed from affaan-m/ECC.
 
 Treat GateGuard as a backstop, not a substitute for reading the command.
 

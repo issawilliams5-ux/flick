@@ -57,7 +57,10 @@ const ECC_ENABLE_VALUES = new Set(['1', 'true', 'on', 'enabled', 'enable', 'yes'
 // phrases without shell-flag ordering concerns. Quoted strings are
 // stripped before this regex runs so a commit message mentioning
 // "drop table" no longer triggers a false positive.
-const DESTRUCTIVE_SQL_DD = /\b(drop\s+table|delete\s+from|truncate|dd\s+if=)\b/i;
+// Local fix: `dd if=` is matched outside the \b group. A trailing \b after
+// "=" requires a word character next, so `dd if=/dev/zero` never matched
+// upstream. Not yet reported to affaan-m/ECC.
+const DESTRUCTIVE_SQL_DD = /\b(drop\s+table|delete\s+from|truncate)\b|\bdd\s+if=/i;
 
 // Operator-supplied additional destructive patterns. Lazily compiled from
 // `GATEGUARD_BASH_EXTRA_DESTRUCTIVE` (regex source) on first use, then
