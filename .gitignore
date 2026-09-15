@@ -29,4 +29,4 @@ flick-*/
 /faceless-output*/
 
 # faceless skill's local ffmpeg-static install (ensure-ffmpeg.mjs) — regenerable.
-skills/faceless/.runtime/
+**/skills/faceless/.runtime/
