@@ -28,7 +28,15 @@ function parseArguments(argumentList) {
 
 function run(executable, argumentList, {captureStderr = false} = {}) {
   return new Promise((resolvePromise, rejectPromise) => {
-    const child = spawn(executable, argumentList, {stdio: captureStderr ? ['ignore', 'ignore', 'pipe'] : 'inherit'});
+    // stdin is always 'ignore', never 'inherit'. ffmpeg reads stdin by default
+    // for interactive q-to-quit control; inherited from a non-interactive
+    // parent (this script's own process, itself spawned non-interactively),
+    // that produced a genuine stall for the 9-input overlay filtergraph below
+    // — output froze at frame 0 or 1 indefinitely, confirmed across multiple
+    // clean re-runs, while the identical command run directly in a shell
+    // never stalled. `-nostdin` on the invocation is redundant with this but
+    // kept as defense in depth.
+    const child = spawn(executable, argumentList, {stdio: captureStderr ? ['ignore', 'ignore', 'pipe'] : ['ignore', 'inherit', 'inherit']});
     let stderr = '';
     if (captureStderr) child.stderr.on('data', (chunk) => { stderr += chunk; });
     child.on('error', () => rejectPromise(new Error('FFmpeg is required to create the character preview.')));
@@ -99,50 +107,60 @@ timeline.at(-1).end = timestamp(videoDuration);
 await mkdir(videoDirectory, {recursive: true});
 await rm(temporaryVideo, {force: true});
 
-const inputs = ['-i', sourceVideo];
-for (const entry of timeline) {
-  inputs.push('-loop', '1', '-framerate', '30', '-i', join(characterDirectory, entry.file));
-}
-
-const filterSteps = ['[0:v]format=rgba[v0]'];
-let currentVideo = 'v0';
-for (const [offset, entry] of timeline.entries()) {
-  const input = offset + 1;
-  const characterVideo = `character${offset}`;
-  const nextVideo = `v${offset + 1}`;
-  const arrivalEnd = timestamp(entry.start + ENTRANCE_SECONDS);
-  const progress = `(1-pow(1-min(1\\,max(0\\,(t-${entry.start})/${ENTRANCE_SECONDS}))\\,3))`;
-  const x = entry.side === 'left'
-    ? `if(lt(t\\,${arrivalEnd})\\,-w+(w+50)*${progress}\\,50)`
-    : `if(lt(t\\,${arrivalEnd})\\,W-(w+50)*${progress}\\,W-w-50)`;
-  const enable = `gte(t,${entry.start})*lt(t,${entry.end})`;
-  filterSteps.push(`[${input}:v]scale=-1:860[${characterVideo}]`);
-  filterSteps.push(`[${currentVideo}][${characterVideo}]overlay=x=${x}:y=H-h:enable='${enable}'[${nextVideo}]`);
-  currentVideo = nextVideo;
-}
-
+// Rendered as N sequential single-overlay passes, not one filter_complex
+// chaining all N speaker turns. A single filtergraph combining the base video
+// with all nine -loop character-image inputs at once produced a genuine,
+// non-deterministic ffmpeg/x264 deadlock: confirmed to make partial real
+// progress (output growing for over a minute) and then permanently stall with
+// zero further output, at a different point on different runs, independent
+// of preset or lookahead settings. A plain two-input overlay (base video +
+// one character image) never stalled in any test, across many runs — so each
+// pass here only ever has two video inputs, matching that proven-safe shape.
+// Local change, not upstream — re-apply if this script is refreshed from
+// Creatorberry/faceless.
+const stepPath = (index) => join(videoDirectory, `.character-step-${index}.mp4`);
+let inputVideo = sourceVideo;
 console.log(`Adding ${timeline.length} speaker turns to ${finalVideo}`);
 try {
-  const {code} = await run(executable, [
-    '-y',
-    ...inputs,
-    '-filter_complex', filterSteps.join(';'),
-    '-map', `[${currentVideo}]`,
-    '-map', '0:a:0',
-    '-c:v', 'libx264',
-    '-crf', '18',
-    '-preset', 'medium',
-    '-c:a', 'copy',
-    '-shortest',
-    '-movflags', '+faststart',
-    temporaryVideo,
-  ]);
-  if (code !== 0 || !(await completed(temporaryVideo))) {
-    throw new Error('FFmpeg did not produce the character video.');
+  for (const [offset, entry] of timeline.entries()) {
+    const isLast = offset === timeline.length - 1;
+    const outputPath = isLast ? temporaryVideo : stepPath(offset);
+    const arrivalEnd = timestamp(entry.start + ENTRANCE_SECONDS);
+    const progress = `(1-pow(1-min(1\\,max(0\\,(t-${entry.start})/${ENTRANCE_SECONDS}))\\,3))`;
+    const x = entry.side === 'left'
+      ? `if(lt(t\\,${arrivalEnd})\\,-w+(w+50)*${progress}\\,50)`
+      : `if(lt(t\\,${arrivalEnd})\\,W-(w+50)*${progress}\\,W-w-50)`;
+    const enable = `gte(t,${entry.start})*lt(t,${entry.end})`;
+    const filter = `[0:v]format=rgba[v0];[1:v]scale=-1:860[c0];[v0][c0]overlay=x=${x}:y=H-h:enable='${enable}'[out]`;
+
+    console.log(`Speaker turn ${offset + 1} of ${timeline.length} (${entry.file}, ${entry.start}s-${entry.end}s)`);
+    const {code} = await run(executable, [
+      '-y',
+      '-nostdin',
+      '-i', inputVideo,
+      '-loop', '1', '-framerate', '30', '-i', join(characterDirectory, entry.file),
+      '-filter_complex', filter,
+      '-map', '[out]',
+      '-map', '0:a:0',
+      '-c:v', 'libx264',
+      '-crf', '18',
+      '-preset', 'veryfast',
+      '-x264-params', 'rc-lookahead=0:mbtree=0',
+      '-c:a', 'copy',
+      '-shortest',
+      ...(isLast ? ['-movflags', '+faststart'] : []),
+      outputPath,
+    ]);
+    if (code !== 0 || !(await completed(outputPath))) {
+      throw new Error(`FFmpeg did not produce speaker turn ${offset + 1} of ${timeline.length}.`);
+    }
+    if (inputVideo !== sourceVideo) await rm(inputVideo, {force: true});
+    inputVideo = outputPath;
   }
   await rename(temporaryVideo, finalVideo);
 } finally {
   await rm(temporaryVideo, {force: true});
+  for (const entry of timeline) await rm(stepPath(timeline.indexOf(entry)), {force: true});
 }
 
 console.log(`Characters added: ${finalVideo}`);
