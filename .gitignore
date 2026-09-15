@@ -30,3 +30,7 @@ flick-*/
 
 # faceless skill's local ffmpeg-static install (ensure-ffmpeg.mjs) — regenerable.
 **/skills/faceless/.runtime/
+
+# faceless skill's downloaded Minecraft background video(s) — fetched from
+# Creatorberry's own GitHub release, verified by SHA-256, never committed here.
+**/skills/faceless/video-templates/
