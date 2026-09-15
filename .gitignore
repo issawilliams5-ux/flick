@@ -27,3 +27,6 @@ flick-*/
 
 # faceless skill output (scripts/audio/video generated per run) — not source.
 /faceless-output*/
+
+# faceless skill's local ffmpeg-static install (ensure-ffmpeg.mjs) — regenerable.
+skills/faceless/.runtime/
