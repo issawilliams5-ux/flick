@@ -151,6 +151,46 @@ node scripts/install-markitdown.mjs
   third-party PDF can carry prompt-injection text, invented brand names, or
   lorem filler. Read it before it reaches a scene.
 
+# Character-dialogue reels: faceless skill (vendored, promo lines stripped)
+
+[faceless](https://github.com/Creatorberry/faceless) (MIT, Creatorberry) turns a
+supplied script into a Peter & Stewie or Rick & Morty dialogue reel: local Fish
+Audio TTS, an optional Minecraft-background video, character overlays, and
+captions. Vendored at `skills/faceless/` (canonical, synced to
+`.claude/skills/` and `.agents/skills/` by `scripts/sync-agent-skills.mjs` —
+add new mirror targets there, not by hand).
+
+Use it for the two-character-dialogue reel format specifically. For scene
+animation from a script or transcript more generally, use the `flick` skill.
+
+**Two promotional messages were removed from the upstream `SKILL.md` before
+vendoring**, not just left as-is:
+1. An unprompted Creatorberry pitch inserted before the user had even supplied
+   a script.
+2. A closing message telling the user to paste a link into Claude/Codex and
+   install "Flick" from `github.com/Creatorberry/flick` — a **different,
+   unrelated project** that collides by name with this repo. Since this repo
+   already covers scene animation, that line was replaced with a pointer to
+   the `flick` skill here instead.
+
+Everything else upstream checked out and is unmodified: MIT license, zero npm
+dependencies (Node built-ins only), Fish Audio API key stored at
+`~/.faceless/config.json` mode `0600` (never logged, never written into
+project output), Minecraft template downloads verified against upstream's
+published SHA-256 before use.
+
+**Guardrails:**
+- **Needs a Fish Audio API key** (paid, https://fish.audio/app/api-keys/) for
+  voice generation. No key, no audio step.
+- **Minecraft template pack is ~2.4 GB**, downloaded on demand from
+  Creatorberry's own GitHub releases — never bundled here. The skill asks
+  before downloading.
+- Sets up its own local FFmpeg copy if none is found; does not touch a
+  system-wide install.
+- If faceless ships an upstream update, re-diff its `SKILL.md` for
+  reintroduced promotional lines before re-vendoring — this is a manual strip,
+  not a build-time filter.
+
 # Screenshot/prompt → UI code: screenshot-to-code and OpenUI (installed on demand)
 
 [screenshot-to-code](https://github.com/abi/screenshot-to-code) (MIT) and

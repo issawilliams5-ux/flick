@@ -4,7 +4,7 @@ import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['flick', 'ui-from-screenshot'];
+const names = ['flick', 'ui-from-screenshot', 'faceless'];
 
 // node_modules (e.g. skills/flick/node_modules from its own package.json)
 // is excluded: copying an installed tree on every sync is wasteful, and any
