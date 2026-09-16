@@ -22,6 +22,36 @@ Run the ladder *after* understanding the problem, not instead of it — read the
 
 Trust-boundary validation, data-loss handling, security, and accessibility are never cut for brevity, no matter what rung you land on.
 
+# Headless agent UI: OpenHands Agent Canvas (available tooling, not deployed)
+
+[OpenHands Agent Canvas](https://github.com/OpenHands/OpenHands) (Apache-2.0)
+is a control-center UI over one or more Agent Servers — REST-driven coding
+agents you can run locally, in Docker, or point at a hosted OpenHands Cloud
+instance. It is **not installed or vendored** here and is not part of any
+Flick run; it's a separate dev tool a contributor runs on their own machine.
+
+- **No sandbox** (Node.js 22.12+, `uv`): `npm install -g @openhands/agent-canvas`
+  then `agent-canvas` — runs the agent server directly on your machine with
+  full filesystem access. `agent-canvas --frontend-only` / `--backend-only`
+  split the stack.
+- **Docker sandbox** (recommended if you don't want host filesystem access):
+  set `PROJECTS_PATH` to a directory containing the project folders you want
+  the agent to see, then
+  `docker run -it --rm -p 8000:8000 -v "$HOME/.openhands:/home/openhands/.openhands" -v "${PROJECTS_PATH}:/projects" ghcr.io/openhands/agent-canvas:1.18.0`.
+- **From source**: `git clone https://github.com/OpenHands/OpenHands.git && cd OpenHands && npm install && npm run dev`.
+- UI: `http://localhost:8000` (npm/source), or `http://localhost:8000/canvas`
+  (Docker image). Additional Agent Server backends can be added from the UI.
+
+**Guardrails:**
+- The no-sandbox and from-source paths run the agent server directly on the
+  host with full filesystem access — prefer the Docker path, scoped to
+  `PROJECTS_PATH`, unless you specifically want host access.
+- Treat it like any other coding agent with write access: review its diffs
+  before merging, same as the Ponytail rules above ask of any generator.
+- This is a separate multi-repo project (OpenHands frontend, `software-agent-sdk`,
+  `typescript-client`, `automation`) — file bugs/feature work against the repo
+  that owns the behavior, not this one.
+
 # Screenshot/prompt → UI code: screenshot-to-code and OpenUI (installed on demand)
 
 [screenshot-to-code](https://github.com/abi/screenshot-to-code) (MIT) and
