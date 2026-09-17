@@ -21,7 +21,11 @@ import {homedir} from 'node:os';
 import {join, resolve} from 'node:path';
 import {ensureFfmpeg} from './ffmpeg.mjs';
 
-const GEMINI_TTS_MODEL = 'gemini-3.1-flash-tts-preview';
+// Not gemini-3.1-flash-tts-preview: its free tier allows only 10 requests per
+// DAY per project (quotaId GenerateRequestsPerDayPerProjectPerModel-FreeTier),
+// which a single nine-line reel plus one audition round exhausts. The 2.5
+// preview has a far higher quota and honors the same voices and tone prompts.
+const GEMINI_TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 const GEMINI_TTS_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent`;
 const CONFIG_PATH = join(process.env.FACELESS_CONFIG_DIR || join(homedir(), '.faceless'), 'gemini-config.json');
 
