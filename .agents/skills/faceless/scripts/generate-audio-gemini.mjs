@@ -21,7 +21,8 @@ import {homedir} from 'node:os';
 import {join, resolve} from 'node:path';
 import {ensureFfmpeg} from './ffmpeg.mjs';
 
-const GEMINI_TTS_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent';
+const GEMINI_TTS_MODEL = 'gemini-3.1-flash-tts-preview';
+const GEMINI_TTS_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent`;
 const CONFIG_PATH = join(process.env.FACELESS_CONFIG_DIR || join(homedir(), '.faceless'), 'gemini-config.json');
 
 const PETER_VOICE_ID = 'e34b4e061b874623a08f41e5c4fecfb9';
@@ -34,13 +35,22 @@ const CASTS = [
   {name: 'Rick & Morty', first: RICK_VOICE_ID, second: MORTY_VOICE_ID},
 ];
 
-// Prebuilt Gemini TTS voices (per Gemini API docs); arbitrary but distinct
-// per character so the two speakers in a pair never share a voice.
+// Prebuilt Gemini TTS voices, distinct per character so the two speakers in a
+// pair never share a voice. The Rick/Morty pair was chosen by audition rather
+// than arbitrarily; Peter/Stewie have not been auditioned.
 const GEMINI_VOICE_BY_ID = {
   [PETER_VOICE_ID]: 'Puck',
   [STEWIE_VOICE_ID]: 'Charon',
-  [RICK_VOICE_ID]: 'Fenrir',
-  [MORTY_VOICE_ID]: 'Kore',
+  [RICK_VOICE_ID]: 'Algenib',
+  [MORTY_VOICE_ID]: 'Achird',
+};
+
+// Gemini TTS honors a natural-language tone instruction prepended to the text.
+// These describe a character archetype only — they never name a show, actor, or
+// performance to imitate. A voice with no entry is sent as plain text.
+const STYLE_BY_ID = {
+  [RICK_VOICE_ID]: 'a gravelly-voiced, cynical, impatient older scientist, fast and clipped and a little manic',
+  [MORTY_VOICE_ID]: 'a nervous, high-strung teenage boy, higher pitched and hesitant and anxious',
 };
 
 async function loadGeminiApiKey() {
@@ -129,9 +139,20 @@ function pcmToWav(pcmBuffer, sampleRate = 24000, channels = 1, bitsPerSample = 1
   return Buffer.concat([header, pcmBuffer]);
 }
 
+// The dialogue schema puts a leading emotion tag on each line, e.g. "(excited)".
+// It must never be spoken aloud, so it is stripped from the text either way, but
+// it is folded into the tone instruction rather than discarded.
+function buildPrompt(line) {
+  const emotion = line.text.match(/^\(([a-z]+)\)\s*/i)?.[1];
+  const spokenText = line.text.replace(/^\([a-z]+\)\s*/i, '');
+  const persona = STYLE_BY_ID[line.voiceId];
+  if (!persona) return spokenText;
+  return `Read this as ${persona}${emotion ? `, sounding ${emotion.toLowerCase()}` : ''}: ${spokenText}`;
+}
+
 async function generateLine({geminiApiKey, line, filePath}) {
   const voiceName = GEMINI_VOICE_BY_ID[line.voiceId];
-  const spokenText = line.text.replace(/^\([a-z]+\)\s*/i, '');
+  const spokenText = buildPrompt(line);
   const response = await fetch(`${GEMINI_TTS_URL}?key=${geminiApiKey}`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
